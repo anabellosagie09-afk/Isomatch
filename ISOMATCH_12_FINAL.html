@@ -1,0 +1,1571 @@
+index.html
+
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<script src="https://3Dmol.csb.pitt.edu/build/3Dmol-min.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ISOMATCH</title>
+<style>
+        :root {
+            --pink: #ff2d75;
+            --coral: #ff4f5e;
+            --red: #ff385c;
+            --deep: #2b2024;
+            --muted: #75666c;
+            --soft: #fff4f7;
+            --card: rgba(255,255,255,0.96);
+        }
+
+        * { box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            background:
+                radial-gradient(circle at 8% 12%, rgba(255,45,117,.22), transparent 28%),
+                radial-gradient(circle at 92% 16%, rgba(255,56,92,.20), transparent 26%),
+                radial-gradient(circle at 50% 100%, rgba(255,96,54,.10), transparent 30%),
+                linear-gradient(145deg, #fff4f7 0%, #ffffff 48%, #ffeef3 100%);
+            color: var(--deep);
+            text-align: center;
+        }
+
+        .screen {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 34px 22px 55px;
+            overflow-x: hidden;
+        }
+
+        /* Explanation pages need room for the full text + model. */
+        [id$="-explanation"] {
+            justify-content: flex-start;
+            overflow-y: auto;
+            padding-top: 34px;
+        }
+
+        h1 {
+            font-size: clamp(52px, 8vw, 78px);
+            margin: 0;
+            letter-spacing: 5px;
+            font-weight: 900;
+            background: linear-gradient(90deg, #ff385c, #ff2d75, #ff6036);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        h2 {
+            font-size: clamp(28px, 4vw, 42px);
+            margin: 6px 0 10px;
+        }
+
+        h3 { margin-top: 0; }
+
+        .heart {
+            font-size: 50px;
+            margin-bottom: 8px;
+            filter: drop-shadow(0 7px 12px rgba(255,56,92,.20));
+        }
+
+        .tagline {
+            font-size: 18px;
+            line-height: 1.55;
+            font-style: italic;
+            margin: 8px 0 28px;
+            color: var(--muted);
+        }
+
+        button {
+            border: none;
+            border-radius: 999px;
+            padding: 14px 30px;
+            font-size: 16px;
+            font-weight: 800;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--red), var(--pink));
+            color: white;
+            box-shadow: 0 8px 20px rgba(255,56,92,.22);
+            transition: transform .18s ease, box-shadow .18s ease;
+        }
+
+        button:hover {
+            transform: translateY(-2px) scale(1.025);
+            box-shadow: 0 12px 26px rgba(255,56,92,.28);
+        }
+
+        .match-card {
+            width: min(940px, 100%);
+            background: var(--card);
+            border: 1px solid rgba(255,56,92,.10);
+            border-radius: 30px;
+            padding: 28px 28px 30px;
+            box-shadow: 0 18px 55px rgba(94,39,57,.12);
+            backdrop-filter: blur(8px);
+        }
+
+        .match-card h3 {
+            font-size: 22px;
+            margin-bottom: 14px;
+        }
+
+        .match-card p {
+            font-size: 17px;
+            line-height: 1.65;
+        }
+
+        .compound-name {
+            font-size: 23px !important;
+            font-weight: 800;
+            color: var(--pink);
+            margin-bottom: 4px;
+        }
+
+        .compound-structure {
+            font-family: Georgia, serif;
+            font-size: 18px !important;
+            color: #51454a;
+        }
+
+        .match-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin: 22px 0 8px;
+        }
+
+        .match-buttons button:first-child {
+            background: linear-gradient(135deg, #ff385c, #ff2d75);
+        }
+
+        .match-buttons button:last-child {
+            background: #fff;
+            color: var(--deep);
+            border: 1px solid #eadde1;
+            box-shadow: 0 5px 16px rgba(50,30,35,.08);
+        }
+
+        .molecule-model {
+            position: relative;
+            isolation: isolate;
+            z-index: 1;
+            display: block;
+            clear: both;
+            overflow: hidden;
+            width: min(840px, 100%);
+            margin: 42px auto 58px;
+            padding: 22px 22px 20px;
+            box-sizing: border-box;
+            background: #fff;
+            border: 1px solid #f0e4e8;
+            border-radius: 28px;
+            box-shadow: 0 14px 38px rgba(43,32,36,.11);
+        }
+
+        .molecule-title {
+            font-size: 15px;
+            font-weight: 800;
+            margin-bottom: 4px;
+            color: var(--deep);
+        }
+
+        .molecule-3d {
+            position: relative;
+            display: block;
+            width: 100%;
+            height: 270px;
+            margin: 7px auto;
+            border-radius: 17px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .molecule-legend {
+            font-size: 13px;
+            line-height: 1.5;
+            margin-top: 6px;
+            color: #6b5a60;
+        }
+
+        .stereo-pair {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 22px;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .stereo-item {
+            min-width: 0;
+            background: #fff;
+            border: 1px solid #f0e4e8;
+            border-radius: 19px;
+            padding: 8px;
+        }
+
+        .stereo-label {
+            font-weight: 900;
+            font-size: 16px;
+            color: var(--pink);
+            margin: 2px 0 5px;
+        }
+
+        .stereo-view {
+            position: relative;
+            display: block;
+            width: 100%;
+            height: 255px;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #fff;
+        }
+
+        .explanation-text {
+            width: min(820px, 100%);
+            margin: 0 auto 8px;
+            padding: 4px 8px 0;
+        }
+        .explanation-text p { margin: 0 0 18px; }
+        #who-am-i > h2, #who-am-i > .tagline, #who-am-i > .clues, #who-am-i > h3, #who-am-i > .options, #who-am-i > #answer-message { position: relative; z-index: 3; }
+        #who-am-i .molecule-model { margin-top: 36px; margin-bottom: 42px; }
+        .match-celebration { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; flex-direction: column; pointer-events: none; background: radial-gradient(circle at center, rgba(255,255,255,.97) 0%, rgba(255,238,244,.94) 42%, rgba(255,56,92,.18) 100%); }
+        .match-celebration.show { display: flex; animation: matchFade 1.55s ease forwards; }
+        .match-celebration-title { font-size: clamp(42px, 8vw, 82px); font-weight: 1000; letter-spacing: 2px; color: #ff385c; text-shadow: 0 8px 25px rgba(255,56,92,.22); transform: scale(.7); animation: matchPop .65s cubic-bezier(.2,1.5,.3,1) forwards; }
+        .match-celebration-sub { margin-top: 8px; font-size: 22px; font-weight: 900; color: #ff2d75; }
+        .match-celebration-hearts::before, .match-celebration-hearts::after { content: '💗  💘  ❤️  💕  💖  💘  ❤️  💗'; position: absolute; left: 50%; top: 50%; width: 100vw; font-size: clamp(28px, 5vw, 54px); letter-spacing: 14px; white-space: nowrap; transform: translate(-50%, -50%) rotate(-8deg); opacity: 0; animation: heartsBurst 1.35s ease-out .05s forwards; }
+        .match-celebration-hearts::after { transform: translate(-50%, -50%) rotate(8deg) translateY(35px); animation-delay: .12s; }
+        @keyframes matchPop { to { transform: scale(1); } }
+        @keyframes heartsBurst { 0% { opacity: 0; transform: translate(-50%, -50%) scale(.6); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(-50%, -50%) scale(1.25) translateY(-55px); } }
+        @keyframes matchFade { 0%,75% { opacity: 1; } 100% { opacity: 0; } }
+
+        .clues {
+            width: min(620px,100%);
+            background: white;
+            border-radius: 22px;
+            padding: 14px 20px;
+            box-shadow: 0 10px 30px rgba(43,32,36,.08);
+        }
+
+        .matches-list {
+            display: grid;
+            gap: 12px;
+        }
+
+        .match-link {
+            width: 100%;
+            text-align: left;
+            background: #fff;
+            color: var(--deep);
+            border: 1px solid #f0e4e8;
+            box-shadow: 0 6px 18px rgba(43,32,36,.07);
+        }
+
+        .match-link:hover {
+            color: var(--pink);
+        }
+
+        @media (max-width: 700px) {
+            .stereo-pair { grid-template-columns: 1fr; }
+            .match-card { padding: 22px 16px 25px; }
+            .screen { padding-left: 14px; padding-right: 14px; }
+        }
+    </style>
+</head>
+<body>
+<div class="screen">
+<div class="heart">💘</div>
+<h1>ISOMATCH</h1>
+<p class="tagline">
+            To find your soulmate, you have to find yourself first.
+        </p>
+<button onclick="showWhoAmI()">EMPEZAR →</button>
+</div>
+<div class="screen" id="who-am-i" style="display: none;">
+<div class="heart">🪞</div>
+<h2>¿QUIÉN SOY?</h2>
+<p class="tagline">
+        Antes de encontrar tus isómeros...
+        <br/>
+        tienes que encontrarte a ti mismo.
+    </p>
+<div class="clues">
+<p>🧬 <strong>Fórmula molecular:</strong> C₅H₁₀O</p>
+<p>🧪 <strong>Grupo funcional:</strong> Alcohol</p>
+<p>🔢 <strong>Átomos de carbono:</strong> 5</p>
+</div>
+<div class="molecule-model">
+<div class="molecule-title">
+            Modelo molecular 
+        </div>
+<div class="molecule-3d" id="viewer-original"></div>
+<div class="molecule-legend">
+    ⚫ Carbono    ⚪ Hidrógeno    🔴 Oxígeno
+    <br/>
+<strong>C2 presenta geometría tetraédrica (109,5°).</strong>
+    La cuña representa un enlace hacia delante y el enlace discontinuo
+    representa un enlace hacia atrás.
+</div>
+</div>
+<h3>¿Quién soy?</h3>
+<div class="options">
+<button onclick="checkAnswer('correct')">
+            Pent-3-en-2-ol
+        </button>
+<button onclick="checkAnswer('wrong')">
+            Pent-2-en-3-ol
+        </button>
+<button onclick="checkAnswer('wrong')">
+            3-metilbut-2-en-1-ol
+        </button>
+</div>
+<p id="answer-message"></p>
+</div>
+<div class="screen" id="find-match" style="display: none;">
+<div class="heart">💘</div>
+<h2>ENCUENTRA TU ISÓMERO</h2>
+<p class="tagline">
+        Ahora que sabes quién eres...
+        <br/>
+        ¿puedes reconocer a tu Isomatch?
+    </p>
+<div class="match-card">
+<h3>🔀 ¿ISÓMERO DE CADENA?</h3>
+<p class="compound-name">
+            2-metilbut-2-en-1-ol
+        </p>
+<p class="compound-structure">
+            CH₂OH–C(CH₃)=CH–CH₃
+        </p>
+<div class="match-buttons">
+<button onclick="checkMatch('chain')">
+                ❤️ MATCH
+            </button>
+<button onclick="checkMatch('not-chain')">
+                ❌ NO MATCH
+            </button>
+</div>
+<p id="match-message"></p>
+<button id="next-match" onclick="nextMatch()" style="display: none;">
+    SIGUIENTE →
+</button>
+</div>
+</div>
+<div class="screen" id="position-match" style="display: none;">
+<div class="heart">📍</div>
+<h2>ENCUENTRA TU ISÓMERO</h2>
+<p class="tagline">
+        La posición importa...
+        <br/>
+        ¿Encontrarás tu Isomatch?
+    </p>
+<div class="match-card">
+<h3>📍 ¿ISÓMERO DE POSICIÓN?</h3>
+<p class="compound-name" id="position-name">
+    pent-3-en-1-ol
+</p>
+<p class="compound-structure" id="position-structure">
+    HO–CH₂–CH₂–CH=CH–CH₃
+</p>
+<div class="match-buttons">
+<button onclick="checkPosition('match')">
+                ❤️ MATCH
+            </button>
+<button onclick="checkPosition('no-match')">
+                ❌ NO MATCH
+            </button>
+</div>
+<p id="position-message"></p>
+<button id="next-position" onclick="nextPosition()" style="display: none;">
+            SIGUIENTE →
+        </button>
+</div>
+</div><div class="screen" id="function-match" style="display: none;">
+<div class="heart">🔄</div>
+<h2>ENCUENTRA TU ISÓMERO</h2>
+<p class="tagline">
+        Misma fórmula...
+        <br/>
+        pero una función diferente.
+    </p>
+<div class="match-card">
+<h3>🔄 ¿ISÓMERO DE FUNCIÓN?</h3>
+<p class="compound-name">
+            1-metoxibut-2-eno
+        </p>
+<p class="compound-structure">
+            CH₃–O–CH₂–CH=CH–CH₃
+        </p>
+<div class="match-buttons">
+<button onclick="checkFunction('match')">
+                ❤️ MATCH
+            </button>
+<button onclick="checkFunction('no-match')">
+                ❌ NO MATCH
+            </button>
+</div>
+<p id="function-message"></p>
+<button id="next-function" onclick="nextFunction()" style="display: none;">
+            SIGUIENTE →
+        </button>
+</div>
+</div>
+<div class="screen" id="ez-match" style="display: none;">
+<div class="heart">↔️</div>
+<h2>ENCUENTRA TU ISÓMERO</h2>
+<p class="tagline">
+        A veces no basta con tener los mismos átomos...
+        <br/>
+        también importa cómo están colocados en el espacio.
+    </p>
+<div class="match-card">
+<h3>↔️ ¿ISÓMERO E/Z?</h3>
+<p class="compound-name">
+            (E)-pent-3-en-2-ol
+        </p>
+<p class="compound-structure">
+            CH₃–CH(OH)–CH=CH–CH₃
+        </p>
+<div class="match-buttons">
+<button onclick="checkEZ('match')">
+                ❤️ MATCH
+            </button>
+<button onclick="checkEZ('no-match')">
+                ❌ NO MATCH
+            </button>
+</div>
+<p id="ez-message"></p>
+<button id="next-ez" onclick="nextEZ()" style="display: none;">
+            SIGUIENTE →
+        </button>
+</div>
+</div>
+<div class="screen" id="optical-match" style="display: none;">
+<div class="heart">🪞</div>
+<h2>ENCUENTRA TU ISÓMERO</h2>
+<p class="tagline">
+        A veces son casi iguales...
+        <br/>
+        pero no pueden superponerse.
+    </p>
+<div class="match-card">
+<h3>🪞 ¿ISÓMERO ÓPTICO?</h3>
+<p class="compound-name">
+            (R)-pent-3-en-2-ol
+        </p>
+<p class="compound-structure">
+            CH₃–CH(OH)–CH=CH–CH₃
+        </p>
+<div class="match-buttons">
+<button onclick="checkOptical('match')">
+                ❤️ MATCH
+            </button>
+<button onclick="checkOptical('no-match')">
+                ❌ NO MATCH
+            </button>
+</div>
+<p id="optical-message"></p>
+<button id="next-optical" onclick="nextOptical()" style="display: none;">
+            SIGUIENTE →
+        </button>
+</div>
+</div>
+ <div class="screen" id="final-match" style="display: none;">
+<div class="heart">💘</div>
+<h2>¡HAS ENCONTRADO TUS ISOMATCHES!</h2>
+<p class="tagline">
+        Para encontrar tus isómeros...
+        <br/>
+        primero tenías que encontrarte a ti mismo.
+    </p>
+<div class="match-card">
+<h3>💘 MY MATCHES</h3>
+<div class="matches-list">
+<button class="match-link" onclick="showExplanation('chain')">
+    🔀 <strong>Isomería de cadena</strong>
+</button>
+<button class="match-link" onclick="showExplanation('position')">
+    📍 <strong>Isomería de posición</strong>
+</button><button class="match-link" onclick="showExplanation('function')">
+    🔄 <strong>Isomería de función</strong>
+</button>
+<button class="match-link" onclick="showExplanation('ez')">
+    ↔️ <strong>Isomería E/Z</strong>
+</button>
+<button class="match-link" onclick="showExplanation('optical')">
+    🪞 <strong>Isomería óptica</strong>
+</button>
+</div>
+<p class="tagline">
+            ¡Has encontrado un isómero de cada tipo!
+        </p>
+</div>
+</div>
+<div class="screen" id="chain-explanation" style="display: none;">
+<div class="heart">🔀</div>
+<h2>ISOMERÍA DE CADENA</h2>
+<div class="match-card">
+<h3>¿Qué ha cambiado?</h3><div class="molecule-model">
+<div class="molecule-title">
+                Modelo molecular del isómero de cadena
+            </div>
+<div class="molecule-3d" id="viewer-chain"></div>
+<div class="molecule-legend">
+                ⚫ Carbono    ⚪ Hidrógeno    🔴 Oxígeno
+                <br/>
+                El carbono saturado presenta geometría tetraédrica.
+                La cadena carbonada aparece ramificada.
+            </div>
+</div><div class="explanation-text">
+<p>
+    En este caso, los dos compuestos tienen la <strong>misma fórmula molecular</strong> y el mismo
+    <strong>grupo funcional</strong>. La diferencia está en cómo están colocados los átomos de carbono:
+    cambia la forma de la cadena.
+</p>
+<p>
+    🧪 <strong>Compuesto original:</strong><br/>
+    pent-3-en-2-ol
+</p>
+<p>
+    🔀 <strong>Isómero de cadena:</strong><br/>
+    2-metilbut-2-en-1-ol
+</p>
+<p>
+    Los dos tienen fórmula <strong>C₅H₁₀O</strong> y son alcoholes. En el compuesto original la cadena
+    es lineal, mientras que en el segundo aparece una <strong>ramificación</strong>.
+    Por eso hablamos de isomería de cadena.
+</p>
+</div>
+
+
+
+ 
+<button onclick="backToMatches()">
+            ← VOLVER A MY MATCHES
+        </button>
+</div>
+</div> <div class="screen" id="position-explanation" style="display: none;">
+<div class="heart">📍</div>
+<h2>ISOMERÍA DE POSICIÓN</h2>
+<div class="match-card">
+<h3>¿Qué ha cambiado?</h3><div class="molecule-model">
+<div class="molecule-title">
+                Modelo molecular del isómero de posición
+            </div>
+<div class="molecule-3d" id="viewer-position"></div>
+<div class="molecule-legend">
+                ⚫ Carbono    ⚪ Hidrógeno    🔴 Oxígeno
+                <br/>
+                La cadena carbonada se mantiene.
+                Cambia la posición del grupo funcional.
+            </div>
+</div><div class="explanation-text">
+<p>
+    Aquí la cadena de carbonos se mantiene igual y también se mantiene el <strong>grupo funcional</strong>.
+    Lo que cambia es el lugar en el que está situado un grupo o un enlace.
+</p>
+<p>
+    🧪 <strong>Compuesto original:</strong><br/>
+    pent-3-en-2-ol
+</p>
+<p>
+    📍 <strong>Isómero de posición:</strong><br/>
+    pent-3-en-1-ol
+</p>
+<p>
+    Los dos tienen fórmula <strong>C₅H₁₀O</strong>, son alcoholes y tienen una cadena de cinco carbonos.
+    En este ejemplo, el <strong>OH cambia de posición</strong>. Ese pequeño cambio es suficiente para que
+    sean isómeros de posición.
+</p>
+</div>
+
+
+
+ 
+<button onclick="backToMatchesFrom('position')">
+            ← VOLVER A MY MATCHES
+        </button>
+</div>
+</div>
+<div class="screen" id="function-explanation" style="display: none;">
+<div class="heart">🔄</div>
+<h2>ISOMERÍA DE FUNCIÓN</h2>
+<div class="match-card">
+<h3>¿Qué ha cambiado?</h3><div class="molecule-model">
+<div class="molecule-title">
+                Modelo molecular 
+            </div>
+<div class="molecule-3d" id="viewer-function"></div>
+<div class="molecule-legend">
+                ⚫ Carbono    ⚪ Hidrógeno    🔴 Oxígeno
+                <br/>
+                El oxígeno forma parte de un grupo éter.
+                La conectividad cambia respecto al alcohol original.
+            </div>
+</div><div class="explanation-text">
+<p>
+    En este tipo de isomería, los átomos siguen teniendo la <strong>misma fórmula molecular</strong>,
+    pero se unen de una forma que hace que aparezca una <strong>función química distinta</strong>.
+</p>
+<p>
+    🧪 <strong>Compuesto original:</strong><br/>
+    pent-3-en-2-ol → alcohol
+</p>
+<p>
+    🔄 <strong>Isómero de función:</strong><br/>
+    1-metoxibut-2-eno → éter
+</p>
+<p>
+    Los dos tienen fórmula <strong>C₅H₁₀O</strong>, pero el primero es un alcohol y el segundo es un éter.
+    Por eso, aunque tengan los mismos tipos y cantidades de átomos, pertenecen a <strong>funciones diferentes</strong>.
+</p>
+</div>
+
+
+
+ 
+<button onclick="backToMatchesFrom('function')">
+            ← VOLVER A MY MATCHES
+        </button>
+</div>
+</div>
+<div class="screen" id="ez-explanation" style="display: none;">
+<div class="heart">↔️</div>
+<h2>ISOMERÍA E/Z</h2>
+<div class="match-card">
+<h3>¿Qué ha cambiado?</h3><div class="molecule-model">
+<div class="molecule-title">Modelos moleculares 3D — E / Z</div>
+<div class="stereo-pair">
+<div class="stereo-item">
+<div class="stereo-label">(E)-pent-3-en-2-ol</div>
+<div class="stereo-view" id="viewer-ez-e"></div>
+</div>
+<div class="stereo-item">
+<div class="stereo-label">(Z)-pent-3-en-2-ol</div>
+<div class="stereo-view" id="viewer-ez-z"></div>
+</div>
+</div>
+<div class="molecule-legend">
+                ⚫ Carbono    ⚪ Hidrógeno    🔴 Oxígeno
+                <br/>
+                En <strong>E</strong>, los grupos de mayor prioridad están en lados opuestos.
+                En <strong>Z</strong>, están en el mismo lado del doble enlace.
+            </div>
+</div><div class="explanation-text">
+<p>
+    En una molécula con un doble enlace C=C no hay libre giro alrededor del enlace. Por eso, los grupos
+    que están unidos a los carbonos del doble enlace pueden quedar colocados de dos maneras diferentes.
+</p>
+<p>
+    🧪 <strong>Compuesto:</strong><br/>
+    pent-3-en-2-ol
+</p>
+<p>
+    ↔️ <strong>Formas posibles:</strong><br/>
+    (E)-pent-3-en-2-ol y (Z)-pent-3-en-2-ol
+</p>
+<p>
+    Para distinguirlas, se comparan los grupos de <strong>mayor prioridad</strong> en cada carbono del doble enlace.
+    En <strong>E</strong> quedan en lados opuestos y en <strong>Z</strong> quedan en el mismo lado.
+    La fórmula y la unión entre los átomos son las mismas; cambia su <strong>posición en el espacio</strong>.
+</p>
+</div>
+
+
+
+ 
+<button onclick="backToMatchesFrom('ez')">
+            ← VOLVER A MY MATCHES
+        </button>
+</div>
+</div>
+<div class="screen" id="optical-explanation" style="display: none;">
+<div class="heart">🪞</div>
+<h2>ISOMERÍA ÓPTICA</h2>
+<div class="match-card">
+<h3>¿Qué ha cambiado?</h3><div class="molecule-model">
+<div class="molecule-title">Modelos moleculares 3D — enantiómeros</div>
+<div class="stereo-pair">
+<div class="stereo-item">
+<div class="stereo-label">(R)-pent-3-en-2-ol</div>
+<div class="stereo-view" id="viewer-optical-r"></div>
+</div>
+<div class="stereo-item">
+<div class="stereo-label">(S)-pent-3-en-2-ol</div>
+<div class="stereo-view" id="viewer-optical-s"></div>
+</div>
+</div>
+<div class="molecule-legend">
+                ⚫ Carbono    ⚪ Hidrógeno    🔴 Oxígeno
+                <br/>
+<strong>(R)</strong> y <strong>(S)</strong> tienen la misma conectividad,
+                pero son imágenes especulares no superponibles.
+                <br/>
+                El carbono C2 es quiral porque está unido a cuatro grupos diferentes.
+            </div>
+</div><div class="explanation-text">
+<p>
+    La isomería óptica aparece cuando una molécula tiene un <strong>carbono quiral</strong>, es decir,
+    un carbono unido a cuatro grupos diferentes. En nuestro compuesto, ese carbono es el <strong>C2</strong>.
+</p>
+<p>
+    🧪 <strong>Una configuración:</strong><br/>
+    (R)-pent-3-en-2-ol
+</p>
+<p>
+    🪞 <strong>Su enantiómero:</strong><br/>
+    (S)-pent-3-en-2-ol
+</p>
+<p>
+    Tienen la misma fórmula molecular y los mismos enlaces, pero no tienen la misma disposición espacial.
+    Son como la <strong>mano derecha y la izquierda</strong>: son imágenes especulares y no se pueden colocar
+    una exactamente sobre la otra.
+</p>
+</div>
+
+
+
+ 
+<button onclick="backToMatchesFrom('optical')">
+            ← VOLVER A MY MATCHES
+        </button>
+</div>
+</div>
+<div class="match-celebration" id="match-celebration"><div class="match-celebration-hearts"></div><div class="match-celebration-title">IT’S A MATCH!</div><div class="match-celebration-sub">💘 ISOMATCH 💘</div></div><script>
+
+function showMatchCelebration() {
+    const overlay = document.getElementById("match-celebration");
+    if (!overlay) return;
+    overlay.classList.remove("show");
+    void overlay.offsetWidth;
+    overlay.classList.add("show");
+    setTimeout(function() { overlay.classList.remove("show"); }, 1600);
+}
+
+function showWhoAmI() {
+
+    document.querySelector(".screen").style.display = "none";
+
+    document.getElementById("who-am-i").style.display = "flex";
+
+    setTimeout(function() {
+        createOriginal3D();
+    }, 200);
+
+}
+function checkAnswer(answer) {
+
+    const message = document.getElementById("answer-message");
+
+    if (answer === "correct") {
+
+        message.innerHTML = "💘 ¡MATCH! Has descubierto quién eres: <strong>pent-3-en-2-ol</strong>.";
+
+        setTimeout(function() {
+
+            document.getElementById("who-am-i").style.display = "none";
+            document.getElementById("find-match").style.display = "flex";
+
+        }, 1500);
+
+    } else {
+
+        message.innerHTML = "❌ No exactamente... Mira de nuevo la posición del grupo OH y del doble enlace.";
+
+    }
+
+}
+
+function checkMatch(answer) {
+
+    const message = document.getElementById("match-message");
+    const nextButton = document.getElementById("next-match");
+
+    if (answer === "chain") {
+	matches.chain = true;
+        showMatchCelebration();
+
+        message.innerHTML = `
+            💘 <strong>¡ISOMATCH!</strong><br><br>
+            ¡Muy bien! Este compuesto es un <strong>isómero de cadena</strong> de pent-3-en-2-ol.<br><br>
+            🔬 Ambos tienen la misma fórmula molecular: <strong>C₅H₁₀O</strong>.<br>
+            🧪 Ambos tienen el mismo grupo funcional: <strong>alcohol</strong>.<br>
+            🔀 Pero cambia la estructura de la cadena carbonada.
+        `;
+
+        nextButton.style.display = "inline-block";
+
+    } else {
+
+        message.innerHTML = `
+            👀 <strong>¿Seguro?</strong><br><br>
+            Mira bien la estructura del compuesto.<br><br>
+            Tiene la misma fórmula molecular y el mismo grupo funcional, pero la cadena carbonada está organizada de otra manera.<br><br>
+            💡 Eso es precisamente lo que caracteriza a la <strong>isomería de cadena</strong>.
+        `;
+
+        nextButton.style.display = "none";
+
+    }
+
+}
+
+function nextMatch() {
+
+    document.getElementById("find-match").style.display = "none";
+
+    document.getElementById("position-match").style.display = "flex";
+
+}
+function checkPosition(answer) {
+
+    const message = document.getElementById("position-message");
+    const nextButton = document.getElementById("next-position");
+
+    // CANDIDATOS 1 Y 2 → SÍ SON ISÓMEROS DE POSICIÓN
+
+    if (positionRound === 1 || positionRound === 2) {
+
+        if (answer === "match") {
+
+	matches.position = true;
+        showMatchCelebration();
+
+            message.innerHTML = `
+                💘 <strong>¡ISOMATCH!</strong><br><br>
+                ¡Muy bien! Este compuesto es un <strong>isómero de posición</strong> de pent-3-en-2-ol.<br><br>
+                🔬 Ambos tienen la misma fórmula molecular: <strong>C₅H₁₀O</strong>.<br>
+                🧪 Tienen el mismo grupo funcional: <strong>alcohol</strong>.<br>
+                🧬 Mantienen la misma cadena carbonada.<br>
+                📍 Lo que cambia es la <strong>posición</strong> del grupo funcional o del doble enlace.
+            `;
+
+            nextButton.style.display = "inline-block";
+
+        } else {
+
+            message.innerHTML = `
+                👀 <strong>¿Seguro?</strong><br><br>
+                Sí es un isómero de posición.<br><br>
+                💡 Tiene la misma fórmula molecular, la misma cadena carbonada y el mismo grupo funcional, pero cambia la <strong>posición</strong>.
+            `;
+
+            nextButton.style.display = "none";
+
+        }
+
+    }
+
+    // CANDIDATO 3 → SÍ ES ISÓMERO, PERO DE CADENA
+
+    else if (positionRound === 3) {
+
+        if (answer === "no-match") {
+
+            message.innerHTML = `
+                💚 <strong>¡Bien visto!</strong><br><br>
+                Sí es un isómero, pero <strong>no es de posición</strong>.<br><br>
+                🔬 Tiene la misma fórmula molecular: <strong>C₅H₁₀O</strong>.<br>
+                🧪 Tiene el mismo grupo funcional: <strong>alcohol</strong>.<br>
+                🔀 Pero cambia la <strong>estructura de la cadena carbonada</strong>.<br><br>
+                Por eso es un <strong>isómero de cadena</strong>.
+            `;
+
+            nextButton.style.display = "inline-block";
+
+        } else {
+
+            message.innerHTML = `
+                👀 <strong>¿Seguro?</strong><br><br>
+                Sí es un isómero, pero no es de posición.<br><br>
+                💡 Lo que cambia es la <strong>estructura de la cadena carbonada</strong>, así que es un isómero de cadena.
+            `;
+
+            nextButton.style.display = "none";
+
+        }
+
+    }
+
+    // CANDIDATO 4 → NO ES ISÓMERO
+
+    else if (positionRound === 4) {
+
+        if (answer === "no-match") {
+
+            message.innerHTML = `
+                💚 <strong>¡Bien visto!</strong><br><br>
+                Este compuesto <strong>no es un isómero</strong> de pent-3-en-2-ol.<br><br>
+                🔬 Pent-3-en-2-ol tiene fórmula <strong>C₅H₁₀O</strong>.<br>
+                🧪 Este compuesto tiene fórmula <strong>C₅H₁₂O</strong>.<br><br>
+                💡 Para que dos compuestos sean isómeros tienen que tener la <strong>misma fórmula molecular</strong>.
+            `;
+
+            nextButton.style.display = "inline-block";
+
+        } else {
+
+            message.innerHTML = `
+                👀 <strong>¿Seguro?</strong><br><br>
+                Este compuesto <strong>no es un isómero</strong>.<br><br>
+                💡 Comprueba primero sus fórmulas moleculares: no son iguales.
+            `;
+
+            nextButton.style.display = "none";
+
+        }
+
+    }
+
+}
+let positionRound = 1;
+let matches = {
+    chain: false,
+    position: false,
+    function: false,
+    ez: false,
+    optical: false
+};
+function nextPosition() {
+
+    positionRound++;
+
+    document.getElementById("position-message").innerHTML = "";
+    document.getElementById("next-position").style.display = "none";
+
+    if (positionRound === 2) {
+
+        document.getElementById("position-name").textContent =
+            "pent-2-en-1-ol";
+
+        document.getElementById("position-structure").textContent =
+            "HO–CH₂–CH=CH–CH₂–CH₃";
+
+    } else if (positionRound === 3) {
+
+        document.getElementById("position-name").textContent =
+            "2-metilbut-2-en-1-ol";
+
+        document.getElementById("position-structure").textContent =
+            "HO–CH₂–C(CH₃)=CH–CH₃";
+
+    } else if (positionRound === 4) {
+
+        document.getElementById("position-name").textContent =
+            "pentan-2-ol";
+
+        document.getElementById("position-structure").textContent =
+            "CH₃–CH(OH)–CH₂–CH₂–CH₃";
+
+        } else if (positionRound === 5) {
+
+        document.getElementById("position-match").style.display = "none";
+        document.getElementById("function-match").style.display = "flex";
+
+    }
+
+}
+
+function checkFunction(answer) {
+
+    const message = document.getElementById("function-message");
+    const nextButton = document.getElementById("next-function");
+
+    if (answer === "match") {
+
+        matches.function = true;
+        showMatchCelebration();
+
+        message.innerHTML = `
+            💘 <strong>¡ISOMATCH!</strong><br><br>
+            ¡Muy bien! Este compuesto es un <strong>isómero de función</strong> de pent-3-en-2-ol.<br><br>
+            🔬 Ambos tienen la misma fórmula molecular: <strong>C₅H₁₀O</strong>.<br>
+            🔄 Pero tienen <strong>grupos funcionales diferentes</strong>.<br><br>
+            🧪 Pent-3-en-2-ol es un <strong>alcohol</strong> y 1-metoxibut-2-eno es un <strong>éter</strong>.
+        `;
+
+        nextButton.style.display = "inline-block";
+
+    } else {
+
+        message.innerHTML = `
+            👀 <strong>¿Seguro?</strong><br><br>
+            Mira bien los grupos funcionales.<br><br>
+            💡 Ambos tienen la misma fórmula molecular, pero pertenecen a <strong>funciones químicas diferentes</strong>.
+        `;
+
+        nextButton.style.display = "none";
+    }
+} function nextFunction() {
+
+    document.getElementById("function-match").style.display = "none";
+    document.getElementById("ez-match").style.display = "flex";
+
+} function checkEZ(answer) {
+
+    const message = document.getElementById("ez-message");
+    const nextButton = document.getElementById("next-ez");
+
+    if (answer === "match") {
+
+        matches.ez = true;
+        showMatchCelebration();
+
+        message.innerHTML = `
+            💘 <strong>¡ISOMATCH!</strong><br><br>
+            ¡Muy bien! Este compuesto es un <strong>isómero E/Z</strong> de pent-3-en-2-ol.<br><br>
+            🔬 Tienen la misma fórmula molecular: <strong>C₅H₁₀O</strong>.<br>
+            🧬 Tienen la misma conectividad entre los átomos.<br>
+            ↔️ Lo que cambia es la <strong>disposición espacial</strong> de los grupos alrededor del doble enlace C=C.
+        `;
+
+        nextButton.style.display = "inline-block";
+
+    } else {
+
+        message.innerHTML = `
+            👀 <strong>¿Seguro?</strong><br><br>
+            Mira bien la disposición de los grupos alrededor del doble enlace.<br><br>
+            💡 Este compuesto tiene la misma fórmula molecular y la misma conectividad, pero presenta una disposición espacial diferente.
+        `;
+
+        nextButton.style.display = "none";
+    }
+} function nextEZ() {
+
+    document.getElementById("ez-match").style.display = "none";
+    document.getElementById("optical-match").style.display = "flex";
+
+}
+function checkOptical(answer) {
+
+    const message = document.getElementById("optical-message");
+    const nextButton = document.getElementById("next-optical");
+
+    if (answer === "match") {
+
+        matches.optical = true;
+        showMatchCelebration();
+
+        message.innerHTML = `
+            💘 <strong>¡ISOMATCH!</strong><br><br>
+            ¡Muy bien! Este compuesto es un <strong>isómero óptico</strong> de pent-3-en-2-ol.<br><br>
+            🪞 Ambos tienen la misma fórmula molecular: <strong>C₅H₁₀O</strong>.<br>
+            🧬 Tienen la misma conectividad entre los átomos.<br>
+            ✋ Pero tienen una <strong>disposición espacial diferente</strong> alrededor del carbono quiral.<br><br>
+            🔄 Son imágenes especulares que no se pueden superponer.
+        `;
+
+        nextButton.style.display = "inline-block";
+
+    } else {
+
+        message.innerHTML = `
+            👀 <strong>¿Seguro?</strong><br><br>
+            Mira bien el carbono quiral y su disposición espacial.<br><br>
+            💡 Los dos compuestos tienen la misma conectividad, pero presentan una configuración espacial diferente.
+        `;
+
+        nextButton.style.display = "none";
+    }
+}
+function nextOptical() {
+
+    document.getElementById("optical-match").style.display = "none";
+    document.getElementById("final-match").style.display = "flex";
+
+}
+function showExplanation(type) {
+
+    document.getElementById("final-match").style.display = "none";
+
+    if (type === "chain") {
+        document.getElementById("chain-explanation").style.display = "flex";
+        setTimeout(function() { createChain3D(); }, 200);
+    }
+
+    if (type === "position") {
+        document.getElementById("position-explanation").style.display = "flex";
+        setTimeout(function() { createPosition3D(); }, 200);
+    }
+
+    if (type === "function") {
+        document.getElementById("function-explanation").style.display = "flex";
+        setTimeout(function() { createFunction3D(); }, 200);
+    }
+
+    if (type === "ez") {
+        document.getElementById("ez-explanation").style.display = "flex";
+        setTimeout(function() { createEZ3D(); }, 200);
+    }
+
+    if (type === "optical") {
+        document.getElementById("optical-explanation").style.display = "flex";
+        setTimeout(function() { createOptical3D(); }, 200);
+    }
+}
+function backToMatchesFrom(type) {
+
+    document.getElementById("position-explanation").style.display = "none";
+    document.getElementById("function-explanation").style.display = "none";
+    document.getElementById("ez-explanation").style.display = "none";
+    document.getElementById("optical-explanation").style.display = "none";
+    document.getElementById("chain-explanation").style.display = "none";
+
+    document.getElementById("final-match").style.display = "flex";
+
+}
+
+
+function backToMatches() {
+
+    document.getElementById("chain-explanation").style.display = "none";
+    document.getElementById("final-match").style.display = "flex";
+}
+function buildEZ(viewer, config) {
+    const model = viewer.addModel();
+    const side = config === "Z" ? 1.30 : -1.30;
+    // C1-C2-C3=C4-C5. E = opposite sides; Z = same side.
+    model.addAtoms([
+        {elem:"C", x:-2.65, y:-0.45, z:0.45, bonds:[1,7,8,9], bondOrder:[1,1,1,1]},
+        {elem:"C", x:-1.35, y:-0.35, z:0.10, bonds:[2,3,4], bondOrder:[1,1,1]},
+        {elem:"O", x:-1.35, y:0.85, z:0.75, bonds:[15], bondOrder:[1]},
+        {elem:"H", x:-1.35, y:-0.55, z:-1.10, bonds:[], bondOrder:[]},
+        {elem:"C", x:0.00, y:0.00, z:0.00, bonds:[5,10], bondOrder:[2,1]},
+        {elem:"C", x:1.40, y:0.00, z:0.00, bonds:[6,11], bondOrder:[1,1]},
+        {elem:"C", x:2.75, y:side, z:0.00, bonds:[12,13,14], bondOrder:[1,1,1]},
+        {elem:"H", x:-3.35, y:0.20, z:1.00, bonds:[], bondOrder:[]},
+        {elem:"H", x:-3.35, y:-1.20, z:0.30, bonds:[], bondOrder:[]},
+        {elem:"H", x:-2.65, y:-0.45, z:-0.70, bonds:[], bondOrder:[]},
+        {elem:"H", x:0.00, y:0.95, z:0.65, bonds:[], bondOrder:[]},
+        {elem:"H", x:1.40, y:-0.95, z:0.65, bonds:[], bondOrder:[]},
+        {elem:"H", x:3.50, y:side+0.55, z:0.55, bonds:[], bondOrder:[]},
+        {elem:"H", x:3.50, y:side-0.55, z:0.75, bonds:[], bondOrder:[]},
+        {elem:"H", x:2.75, y:side, z:-0.95, bonds:[], bondOrder:[]},
+        {elem:"H", x:-1.35, y:1.65, z:0.75, bonds:[], bondOrder:[]}
+    ]);
+    model.setStyle({}, {stick:{radius:0.11}, sphere:{scale:0.29}});
+    viewer.zoomTo(); viewer.rotate(8, "y"); viewer.rotate(-3, "x"); viewer.render();
+}
+
+function createEZ3D() {
+    const e = document.getElementById("viewer-ez-e");
+    const z = document.getElementById("viewer-ez-z");
+    if (!e || !z) return;
+
+    e.innerHTML = "";
+    z.innerHTML = "";
+
+    const viewerE = $3Dmol.createViewer(e, {backgroundColor:"white"});
+    const viewerZ = $3Dmol.createViewer(z, {backgroundColor:"white"});
+
+    buildEZ(viewerE, "E");
+    buildEZ(viewerZ, "Z");
+}
+
+function buildOptical(viewer, mirror) {
+    const model = viewer.addModel();
+    const m = mirror ? -1 : 1;
+    // Genuine tetrahedral C2. Base geometry is R; its mirror is S.
+    model.addAtoms([
+        {elem:"C", x:-1.15, y:-0.65, z:0.65*m, bonds:[1,7,8,9], bondOrder:[1,1,1,1]},
+        {elem:"C", x:0.00, y:0.00, z:0.00, bonds:[2,3,4], bondOrder:[1,1,1]},
+        {elem:"O", x:0.00, y:1.25, z:0.65*m, bonds:[15], bondOrder:[1]},
+        {elem:"H", x:0.00, y:-0.20, z:-1.25*m, bonds:[], bondOrder:[]},
+        {elem:"C", x:1.15, y:-0.65, z:-0.65*m, bonds:[5,10], bondOrder:[2,1]},
+        {elem:"C", x:2.50, y:-0.65, z:-0.65*m, bonds:[6,11], bondOrder:[1,1]},
+        {elem:"C", x:3.80, y:-0.20, z:-0.35*m, bonds:[12,13,14], bondOrder:[1,1,1]},
+        {elem:"H", x:-1.85, y:0.00, z:1.15*m, bonds:[], bondOrder:[]},
+        {elem:"H", x:-1.85, y:-1.25, z:0.25*m, bonds:[], bondOrder:[]},
+        {elem:"H", x:-1.15, y:-1.05, z:0.00, bonds:[], bondOrder:[]},
+        {elem:"H", x:1.15, y:0.40, z:0.10*m, bonds:[], bondOrder:[]},
+        {elem:"H", x:2.50, y:-1.65, z:-0.05*m, bonds:[], bondOrder:[]},
+        {elem:"H", x:4.55, y:0.55, z:0.25*m, bonds:[], bondOrder:[]},
+        {elem:"H", x:4.55, y:-0.85, z:0.25*m, bonds:[], bondOrder:[]},
+        {elem:"H", x:3.80, y:-0.20, z:-1.35*m, bonds:[], bondOrder:[]},
+        {elem:"H", x:0.00, y:2.10, z:0.65*m, bonds:[], bondOrder:[]}
+    ]);
+    model.setStyle({}, {stick:{radius:0.11}, sphere:{scale:0.29}});
+    viewer.zoomTo(); viewer.rotate(12, "y"); viewer.rotate(-4, "x"); viewer.render();
+}
+
+function createOptical3D() {
+    const r = document.getElementById("viewer-optical-r");
+    const s = document.getElementById("viewer-optical-s");
+    if (!r || !s) return;
+
+    r.innerHTML = "";
+    s.innerHTML = "";
+
+    const viewerR = $3Dmol.createViewer(r, {backgroundColor:"white"});
+    const viewerS = $3Dmol.createViewer(s, {backgroundColor:"white"});
+
+    buildOptical(viewerR, false); // R
+    buildOptical(viewerS, true);  // S
+}
+
+function createOriginal3D() {
+
+    const element = document.getElementById("viewer-original");
+    if (!element) return;
+
+    element.innerHTML = "";
+
+    const viewer = $3Dmol.createViewer(element, {
+        backgroundColor: "white"
+    });
+
+    const model = viewer.addModel();
+
+    model.addAtoms([
+
+        // 0 C1 — CH3
+        {
+            elem: "C",
+            x: -2.55, y: -0.35, z: -0.25,
+            bonds: [1, 7, 8, 9],
+            bondOrder: [1, 1, 1, 1]
+        },
+
+        // 1 C2 — CH(OH)
+        {
+            elem: "C",
+            x: -1.25, y: 0, z: 0,
+            bonds: [2, 3, 4],
+            bondOrder: [1, 1, 1]
+        },
+
+        // 2 O — OH
+        {
+            elem: "O",
+            x: -1.25, y: 1.25, z: 0.65,
+            bonds: [15],
+            bondOrder: [1]
+        },
+
+        // 3 H unido al C2
+        {
+            elem: "H",
+            x: -1.25, y: -0.35, z: 1.15,
+            bonds: [],
+            bondOrder: []
+        },
+
+        // 4 C3 — CH
+        {
+            elem: "C",
+            x: 0.10, y: 0, z: 0,
+            bonds: [5, 10],
+            bondOrder: [2, 1]
+        },
+
+        // 5 C4 — CH
+        {
+            elem: "C",
+            x: 1.50, y: 0, z: 0,
+            bonds: [6, 11],
+            bondOrder: [1, 1]
+        },
+
+        // 6 C5 — CH3
+        {
+            elem: "C",
+            x: 2.80, y: 0.35, z: 0.25,
+            bonds: [12, 13, 14],
+            bondOrder: [1, 1, 1]
+        },
+
+        // H C1
+        { elem: "H", x: -3.25, y: 0.45, z: 0.55, bonds: [], bondOrder: [] },
+        { elem: "H", x: -3.25, y: -0.95, z: -0.15, bonds: [], bondOrder: [] },
+        { elem: "H", x: -2.55, y: -0.25, z: -1.20, bonds: [], bondOrder: [] },
+
+        // H C3
+        { elem: "H", x: 0.10, y: 1.00, z: 0, bonds: [], bondOrder: [] },
+
+        // H C4
+        { elem: "H", x: 1.50, y: -1.00, z: 0, bonds: [], bondOrder: [] },
+
+        // H C5
+        { elem: "H", x: 3.50, y: 0.95, z: 0.55, bonds: [], bondOrder: [] },
+        { elem: "H", x: 3.50, y: -0.35, z: 0.85, bonds: [], bondOrder: [] },
+        { elem: "H", x: 2.80, y: 0.30, z: -0.90, bonds: [], bondOrder: [] },
+
+        // H del OH
+        { elem: "H", x: -1.25, y: 2.05, z: 0.65, bonds: [], bondOrder: [] }
+    ]);
+
+    model.setStyle({}, {
+        sphere: { scale: 0.32 },
+        stick: { radius: 0.10 }
+    });
+
+    viewer.zoomTo();
+    viewer.rotate(15, "y");
+    viewer.rotate(-8, "x");
+    viewer.render();
+}
+function createChain3D() {
+
+    const element = document.getElementById("viewer-chain");
+    if (!element) return;
+
+    element.innerHTML = "";
+
+    const viewer = $3Dmol.createViewer(element, {
+        backgroundColor: "white"
+    });
+
+    const model = viewer.addModel();
+
+    model.addAtoms([
+
+        // 0 C1 — CH2OH (tetraédrico)
+        { elem: "C", x: -2.15, y: 0.00, z: 0.00,
+          bonds: [1,5,6,7], bondOrder: [1,1,1,1] },
+
+        // 1 C2 — C(CH3)=
+        { elem: "C", x: -0.75, y: 0.00, z: 0.00,
+          bonds: [2,4], bondOrder: [2,1] },
+
+        // 2 C3 — CH=
+        { elem: "C", x: 0.70, y: 0.00, z: 0.00,
+          bonds: [3,8], bondOrder: [1,1] },
+
+        // 3 C4 — CH3
+        { elem: "C", x: 2.05, y: 0.00, z: 0.00,
+          bonds: [9,10,11], bondOrder: [1,1,1] },
+
+        // 4 — CH3 de la ramificación
+        { elem: "C", x: -0.75, y: 1.35, z: 0.65,
+          bonds: [12,13,14], bondOrder: [1,1,1] },
+
+        // 5 — O del OH
+        { elem: "O", x: -2.70, y: 0.75, z: 0.75,
+          bonds: [15], bondOrder: [1] },
+
+        // H de C1
+        { elem: "H", x: -2.75, y: -0.75, z: -0.65, bonds: [], bondOrder: [] },
+        { elem: "H", x: -2.70, y: 0.10, z: -0.95, bonds: [], bondOrder: [] },
+        { elem: "H", x: 0.70, y: 0.00, z: 1.05, bonds: [], bondOrder: [] },
+
+        // H de C4
+        { elem: "H", x: 2.80, y: 0.75, z: 0.65, bonds: [], bondOrder: [] },
+        { elem: "H", x: 2.80, y: -0.75, z: 0.65, bonds: [], bondOrder: [] },
+        { elem: "H", x: 2.05, y: 0.00, z: -1.05, bonds: [], bondOrder: [] },
+
+        // H de la ramificación
+        { elem: "H", x: -1.45, y: 2.05, z: 0.95, bonds: [], bondOrder: [] },
+        { elem: "H", x: -0.75, y: 1.35, z: -0.40, bonds: [], bondOrder: [] },
+        { elem: "H", x: 0.00, y: 2.05, z: 0.95, bonds: [], bondOrder: [] },
+
+        // H del OH
+        { elem: "H", x: -3.30, y: 1.25, z: 1.15, bonds: [], bondOrder: [] }
+    ]);
+
+    model.setStyle({}, {
+        stick: { radius: 0.12 },
+        sphere: { scale: 0.30 }
+    });
+
+    viewer.zoomTo();
+    viewer.rotate(10, "y");
+    viewer.rotate(-5, "x");
+    viewer.render();
+}
+function createPosition3D() {
+
+    const element = document.getElementById("viewer-position");
+    if (!element) return;
+
+    element.innerHTML = "";
+
+    const viewer = $3Dmol.createViewer(element, {
+        backgroundColor: "white"
+    });
+
+    const model = viewer.addModel();
+
+    model.addAtoms([
+
+        // C1 — CH2OH
+        {
+            elem: "C", x: -2.4, y: 0, z: 0,
+            bonds: [1, 5, 6, 7],
+            bondOrder: [1, 1, 1, 1]
+        },
+
+        // C2 — CH2
+        {
+            elem: "C", x: -1.2, y: 0, z: 0,
+            bonds: [2, 8, 9],
+            bondOrder: [1, 1, 1]
+        },
+
+        // C3 — CH=
+        {
+            elem: "C", x: 0.1, y: 0, z: 0,
+            bonds: [3, 10],
+            bondOrder: [2, 1]
+        },
+
+        // C4 — CH=
+        {
+            elem: "C", x: 1.4, y: 0, z: 0,
+            bonds: [4, 11],
+            bondOrder: [1, 1]
+        },
+
+        // C5 — CH3
+        {
+            elem: "C", x: 2.7, y: 0, z: 0,
+            bonds: [12, 13, 14],
+            bondOrder: [1, 1, 1]
+        },
+
+        // O
+        {
+            elem: "O", x: -3.0, y: 0.9, z: 0,
+            bonds: [15],
+            bondOrder: [1]
+        },
+
+        // H de C1
+        { elem: "H", x: -2.8, y: -0.8, z: 0, bonds: [], bondOrder: [] },
+        { elem: "H", x: -2.8, y: 0, z: -0.85, bonds: [], bondOrder: [] },
+
+        // H de C2
+        { elem: "H", x: -1.2, y: 0.9, z: 0.7, bonds: [], bondOrder: [] },
+        { elem: "H", x: -1.2, y: -0.9, z: -0.7, bonds: [], bondOrder: [] },
+
+        // H de C3
+        { elem: "H", x: 0.1, y: 0.9, z: 0.8, bonds: [], bondOrder: [] },
+
+        // H de C4
+        { elem: "H", x: 1.4, y: 0.9, z: 0.8, bonds: [], bondOrder: [] },
+
+        // H de C5
+        { elem: "H", x: 3.45, y: 0.8, z: 0, bonds: [], bondOrder: [] },
+        { elem: "H", x: 3.45, y: -0.8, z: 0, bonds: [], bondOrder: [] },
+        { elem: "H", x: 2.7, y: 0, z: 0.95, bonds: [], bondOrder: [] },
+
+        // H del OH
+        { elem: "H", x: -3.5, y: 1.35, z: 0, bonds: [], bondOrder: [] }
+    ]);
+
+    model.setStyle({}, {
+        stick: { radius: 0.13 },
+        sphere: { scale: 0.30 }
+    });
+
+    viewer.zoomTo();
+    viewer.rotate(18, "y");
+    viewer.rotate(-8, "x");
+    viewer.render();
+} 
+function createFunction3D() {
+
+    const element = document.getElementById("viewer-function");
+    if (!element) return;
+
+    element.innerHTML = "";
+
+    const viewer = $3Dmol.createViewer(element, {
+        backgroundColor: "white"
+    });
+
+    const model = viewer.addModel();
+
+    model.addAtoms([
+
+        // 0 C1 — CH3 del metoxi
+        {
+            elem: "C",
+            x: -2.8, y: 0, z: 0,
+            bonds: [1, 6, 7, 8],
+            bondOrder: [1, 1, 1, 1]
+        },
+
+        // 1 O — éter
+        {
+            elem: "O",
+            x: -1.35, y: 0, z: 0,
+            bonds: [2],
+            bondOrder: [1]
+        },
+
+        // 2 C2 — CH2
+        {
+            elem: "C",
+            x: 0.05, y: 0.25, z: 0,
+            bonds: [3, 9, 10],
+            bondOrder: [1, 1, 1]
+        },
+
+        // 3 C3 — CH
+        {
+            elem: "C",
+            x: 1.35, y: -0.25, z: 0,
+            bonds: [4, 11],
+            bondOrder: [2, 1]
+        },
+
+        // 4 C4 — CH
+        {
+            elem: "C",
+            x: 2.65, y: 0.25, z: 0,
+            bonds: [5, 12],
+            bondOrder: [1, 1]
+        },
+
+        // 5 C5 — CH3
+        {
+            elem: "C",
+            x: 3.95, y: -0.25, z: 0,
+            bonds: [13, 14, 15],
+            bondOrder: [1, 1, 1]
+        },
+
+        // H de C1
+        { elem: "H", x: -3.55, y: 0.65, z: 0.45, bonds: [], bondOrder: [] },
+        { elem: "H", x: -3.55, y: -0.65, z: 0.45, bonds: [], bondOrder: [] },
+        { elem: "H", x: -2.8, y: 0, z: -0.95, bonds: [], bondOrder: [] },
+
+        // H de C2
+        { elem: "H", x: 0.05, y: 1.05, z: 0.45, bonds: [], bondOrder: [] },
+        { elem: "H", x: 0.05, y: 0.25, z: -0.95, bonds: [], bondOrder: [] },
+
+        // H de C3
+        { elem: "H", x: 1.35, y: -0.25, z: 0.95, bonds: [], bondOrder: [] },
+
+        // H de C4
+        { elem: "H", x: 2.65, y: 0.25, z: 0.95, bonds: [], bondOrder: [] },
+
+        // H de C5
+        { elem: "H", x: 4.65, y: 0.40, z: 0.45, bonds: [], bondOrder: [] },
+        { elem: "H", x: 4.65, y: -0.85, z: 0.45, bonds: [], bondOrder: [] },
+        { elem: "H", x: 3.95, y: -0.25, z: -0.95, bonds: [], bondOrder: [] }
+    ]);
+
+    model.setStyle({}, {
+        stick: { radius: 0.13 },
+        sphere: { scale: 0.32 }
+    });
+
+    viewer.zoomTo();
+    viewer.rotate(25, "y");
+    viewer.rotate(-12, "x");
+    viewer.render();
+}
+</script>
+</body>
+</html>
